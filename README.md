@@ -189,9 +189,37 @@ Live logs: `npx wrangler tail`
 
 ---
 
+## 🧽 One-time cleanup of older messages
+
+The bot can't see messages from before it joined. To remove duplicates that
+are **already** in the group, run the cleanup script once. It logs in as
+**your own account**, which can read the full history. It keeps the
+**oldest** copy of each file and deletes the later copies.
+
+**Needs:** Python 3.9+, and an `api_id` / `api_hash` from
+[my.telegram.org](https://my.telegram.org) → *API development tools*.
+To delete other members' messages, you must be an admin with *Delete messages*.
+
+```bash
+pip install -r tools/requirements.txt
+
+# 1. Preview: lists the duplicates, deletes nothing
+python tools/cleanup_history.py "My Group Name"
+
+# 2. Delete them (asks you to type YES first)
+python tools/cleanup_history.py "My Group Name" --delete
+```
+
+- The group can be given as its exact name, an `@username`, an invite link or a numeric ID.
+- `--limit 5000` scans only the newest 5,000 messages.
+- On the first run, you'll be asked for your phone number and the login code Telegram sends you.
+- This creates `tools/cleanup.session`, which keeps you logged in. It's git-ignored. **Delete it when you're done.**
+
+---
+
 ## ⚠️ Limitations
 
-- **No history scan**: the Bot API can't read messages sent before the bot joined.
+- **No history scan by the bot**: the Bot API can't read messages sent before the bot joined. Use the [cleanup script](#-one-time-cleanup-of-older-messages) once for those.
 - **Exact matches only**: a re-compressed or edited file gets a new `file_unique_id`, so it isn't detected as a duplicate.
 - **Stickers and text** are ignored on purpose.
 - **Notice lifetime is capped at 25 seconds**, because a Worker can only keep working for a limited time after it responds.
@@ -207,6 +235,9 @@ telegram-dedupe-bot/
 ├── scripts/
 │   ├── connect-telegram.ps1   # Sets secrets and registers the webhook
 │   └── check-bot.ps1          # Shows webhook status and last error
+├── tools/
+│   ├── cleanup_history.py     # One-time cleanup of older duplicates
+│   └── requirements.txt
 ├── wrangler.toml              # Worker config, KV binding and settings
 └── README.md
 ```
